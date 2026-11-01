@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lajneh Archive</title>
+  
+  <!-- Typography & Fonts matching original Canva PDF -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Dancing+Script:wght@600;700&family=Noto+Sans+Arabic:wght@400;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- html2pdf for direct client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Readers for uploading archive files (Word + PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- OCR for reading screenshots of questions -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  
+  <!-- Base64 Embedded Assets -->
+  <script src="assets.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-badge">HLS</div>
+      <div>
+        <div class="app-title">Medical Exam & Lecture PDF Automation</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" id="btnUploadArchive" title="Upload an old exam/lecture file (Word, PDF, TXT, JSON) to edit">
+        📁 Upload Archive File
+      </button>
+      <input type="file" id="archiveFileInput" accept=".docx,.pdf,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,image/*" multiple style="display:none;">
+      <button class="btn btn-primary" id="btnUploadScreenshots" title="Add questions from screenshots (you can also paste one with Ctrl+V)">
+        🖼️ Add Screenshots
+      </button>
+      <input type="file" id="screenshotFileInput" accept="image/*" multiple style="display:none;">
+      <button class="btn btn-outline" id="btnBulkImport" title="Paste raw questions from Word/WhatsApp/PDF">
+        ⚡ Smart Bulk Import
+      </button>
+      <button class="btn btn-outline" id="btnNewBlank" title="Delete all questions: keep only the cover page and one blank page">
+        🗑️ New Blank
+      </button>
+      <!-- Three-dots Dropdown Menu (Load Lecture 7, Export JSON, Open JSON) -->
+      <div class="dropdown-menu-container">
+        <button class="dropdown-kebab-btn" id="btnProjectMenu" title="More Options (Load, Export, Open)">
+          &#8942;
+        </button>
+        <div class="dropdown-menu-list" id="projectDropdownList">
+          <button class="menu-list-item" id="btnResetDefault" title="Restore Lecture 7 Reference Template">
+            <span class="menu-item-icon">↺</span>
+            <span>Load Lecture 7</span>
+          </button>
+          <button class="menu-list-item" id="btnExportJson" title="Save Project File to Computer">
+            <span class="menu-item-icon">💾</span>
+            <span>Export JSON</span>
+          </button>
+          <button class="menu-list-item" id="btnImportJson" title="Open Project File">
+            <span class="menu-item-icon">📂</span>
+            <span>Open JSON</span>
+          </button>
+        </div>
+      </div>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
+      
+      <button class="btn btn-primary" id="btnDownloadPdf" title="Instant Direct Download PDF">
+        ⬇️ Download PDF
+      </button>
+      <button class="btn btn-red" id="btnPrintPdf" title="Print to High-Res Vector PDF">
+        🖨️ Print / Save to PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Container (Dual Pane) -->
+  <main class="app-container">
+    
+    <!-- Left Pane: Editor Blocks & Config -->
+    <section class="editor-pane">
+      <div class="editor-tabs">
+        <button class="editor-tab active" id="tabQuestions">
+          <span>📝 Question Blocks</span>
+        </button>
+        <button class="editor-tab" id="tabCover">
+          <span>🎨 Cover & Document Settings</span>
+        </button>
+      </div>
+
+      <!-- Tab Content: Question Blocks -->
+      <div class="editor-scroll-area" id="questionsTabContent">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="font-size:14px; font-weight:700; color:#334155;">Questions Editor</h2>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" id="btnNewQuestion">+ Add Question Block</button>
+            <button class="btn btn-outline btn-sm" id="btnNewCover" title="Add an editable cover page between questions">+ Add Cover Page</button>
+          </div>
+        </div>
+
+        <!-- Question Cards List -->
+        <div id="questionBlocksContainer" style="display:flex; flex-direction:column; gap:16px;">
+          <!-- Dynamically populated by app.js -->
+        </div>
+
+        <!-- Add Question Big Button -->
+        <div class="add-block-card" onclick="addQuestion()">
+          <div style="font-size:24px; color:#0284c7;">+</div>
+          <div style="font-size:13px; font-weight:600;">Add New Question Block</div>
+          <div style="font-size:11px; color:#64748b;">Includes Main Question, Multiple Choices, & Side Answer Box</div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Cover Page & Global Settings -->
+      <div class="editor-scroll-area" id="coverTabContent" style="display:none;">
+        
+        <div class="settings-section">
+          <div class="settings-section-title">Cover Page Branding</div>
+          
+          <div class="field-group">
+            <label class="field-label">Subject / Header Title</label>
+            <input type="text" id="settingSubject" class="input-text" value="HLS-Pharmacology">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label class="field-label">Archive Badge</label>
+              <input type="text" id="settingArchive" class="input-text" value="Archive">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Lecture Number</label>
+              <input type="text" id="settingLecture" class="input-text" value="Lecture 7">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Topic / Subtitle (multi-line supported)</label>
+            <textarea id="settingTopic" class="input-text" style="height:60px;">anti-neoplastic drugs&#10;(part 1)</textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Corrected By (Handwritten Script) &mdash; leave empty to hide</label>
+            <input type="text" id="settingCorrectedBy" class="input-text" value="Rahaf Alshatarat">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label class="field-label">Collected By (optional)</label>
+              <input type="text" id="settingCollectedBy" class="input-text" value="">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Edited By (optional)</label>
+              <input type="text" id="settingEditedBy" class="input-text" value="">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Document Layout & Pagination</div>
+          
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label class="field-label">Questions Per Page</label>
+              <input type="number" id="settingQuestionsPerPage" class="input-text" value="5" min="1" max="15">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Primary Color (cover blocks, headers)</label>
+              <input type="color" id="settingPrimaryColor" value="#0badef" style="height:36px; padding:2px; border:1px solid #cbd5e1; border-radius:4px; width:100%; cursor:pointer;">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Choices Text Color (use black for light colors like yellow)</label>
+            <input type="color" id="settingChoiceColor" value="#0badef" style="height:36px; padding:2px; border:1px solid #cbd5e1; border-radius:4px; width:100%; cursor:pointer;">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Custom Footer Notice (e.g. Page 3 Bottom)</label>
+            <input type="text" id="settingFooterText" class="input-text" value="Next page are more questions">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right Pane: Live PDF Preview Viewport -->
+    <section class="preview-pane">
+      
+      <!-- Preview Toolbar -->
+      <div class="preview-toolbar">
+        <div class="preview-toolbar-left">
+          <div class="view-mode-toggle">
+            <button class="mode-btn active" id="btnModeScroll" title="Continuous Vertical Scroll">📜 All Pages</button>
+            <button class="mode-btn" id="btnModeSingle" title="Single Page Flip Mode">📄 Flip View</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:6px; margin-left:6px;">
+            <button class="btn btn-outline btn-sm" id="btnPrevPage" title="Previous Page (Alt+Left)">◀ Prev</button>
+            <select id="pageSelectDropdown" class="page-jump-select" title="Jump to page">
+              <!-- Dynamically populated -->
+            </select>
+            <button class="btn btn-outline btn-sm" id="btnNextPage" title="Next Page (Alt+Right)">Next ▶</button>
+          </div>
+        </div>
+
+        <div class="preview-toolbar-right">
+          <label style="font-size:12px; color:#cbd5e1;">Zoom:</label>
+          <select id="zoomSelect" class="zoom-select">
+            <option value="0.75">75%</option>
+            <option value="0.85">85%</option>
+            <option value="1.0" selected>100%</option>
+            <option value="1.15">115%</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Scrollable Preview Viewport -->
+      <div class="preview-scroll-viewport" id="previewViewport">
+        <!-- Rendered Pages Container -->
+        <div id="pdfPreviewContainer" style="display:flex; flex-direction:column; gap:36px; align-items:center;">
+          <!-- Dynamically populated by app.js (Page 1, Page 2, Page 3, Page 4...) -->
+        </div>
+      </div>
+
+      <!-- Floating Bottom Page Navigation Pill -->
+      <div class="floating-page-nav" id="floatingPageNav">
+        <button class="floating-nav-btn" id="floatingPrevBtn" title="Previous Page">◀ Prev</button>
+        <span class="floating-page-badge" id="floatingPageBadge">Page 1 / 4</span>
+        <div class="floating-page-chips" id="floatingPageChips">
+          <!-- Dynamically populated [1] [2] [3] [4] -->
+        </div>
+        <button class="floating-nav-btn" id="floatingNextBtn" title="Next Page">Next ▶</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Smart Bulk Import Modal -->
+  <div class="modal-overlay" id="bulkModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">⚡ Smart Bulk Questions Importer</div>
+        <button class="icon-btn" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:#64748b; line-height:1.4;">
+          Paste raw questions from summaries, Telegram, WhatsApp, Word, or past exams. The smart parser automatically extracts question numbers, multiple choices (a., b., c...), answers (Ans: X), and Arabic tags (مهم).
+        </p>
+        <div id="archiveDropZone" class="archive-drop-zone">
+          <div style="font-size:22px;">📁</div>
+          <div style="font-size:13px; font-weight:600; color:#334155;">Drop archive files or screenshots here</div>
+          <div style="font-size:11px; color:#64748b;">Word (.docx), PDF, TXT, JSON project files, or screenshots (PNG/JPG). You can select several at once, or paste a screenshot with Ctrl+V.</div>
+          <button class="btn btn-outline btn-sm" id="btnPickArchive" type="button" style="margin-top:6px;">Choose files...</button>
+          <div id="archiveStatus" style="font-size:12px; margin-top:6px; min-height:14px;"></div>
+        </div>
+
+        <textarea id="bulkInputText" class="bulk-textarea" placeholder="Example format:&#10;1) Which drug has cardiotoxic effects?&#10;a. Doxorubicin&#10;b. Methotrexate&#10;c. Mitomycin C&#10;Ans: a&#10;&#10;2) Drug for ovarian cancer? مهم&#10;cisplatin"></textarea>
+        
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="bulkReplaceCb">
+          <label for="bulkReplaceCb" style="font-size:12px; color:#334155; cursor:pointer;">
+            Replace existing questions (uncheck to append to current questions)
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="modalApplyBulkBtn">Parse & Generate Blocks</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive template background (question pages only) -->
+  <script src="template-background.js"></script>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+  <script src="archive-import.js"></script>
+</body>
+</html>
