@@ -603,6 +603,7 @@ function renderEditor() {
       ? createCoverBlockElement(q, index, pageMap[q.id] || 2)
       : createQuestionBlockElement(q, index, pageMap[q.id] || 2);
     container.appendChild(block);
+    container.appendChild(createInsertAfterButton(index));
   });
 }
 
@@ -981,7 +982,7 @@ function createQuestionBlockElement(q, index, assignedPage = 2) {
 // ==========================================================================
 // Question Operations (Add, Move, Duplicate, Delete)
 // ==========================================================================
-function addQuestion(defaultProps = {}) {
+function addQuestion(defaultProps = {}, insertAt = null) {
   const newId = "q" + Date.now();
   const nextNum = examData.questions.length + 1;
   const newQ = {
@@ -1003,7 +1004,12 @@ function addQuestion(defaultProps = {}) {
     ...defaultProps
   };
 
-  examData.questions.push(newQ);
+  if (insertAt === null) {
+    examData.questions.push(newQ);
+  } else {
+    examData.questions.splice(insertAt, 0, newQ);
+    resequenceQuestionNumbers();
+  }
   saveData();
   renderEditor();
   renderPreview();
@@ -1017,6 +1023,21 @@ function addQuestion(defaultProps = {}) {
       setTimeout(() => el.classList.remove("active-focus"), 1200);
     }
   }, 50);
+}
+
+// "+" row shown under every block: inserts a new question right after it
+function createInsertAfterButton(index) {
+  const row = document.createElement("div");
+  row.className = "insert-after-row";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "insert-after-btn";
+  btn.title = "Add a question below";
+  btn.setAttribute("aria-label", "Add a question below");
+  btn.textContent = "+";
+  btn.addEventListener("click", () => addQuestion({}, index + 1));
+  row.appendChild(btn);
+  return row;
 }
 
 // Adds an empty cover page after the last question (it can be moved with the arrows)

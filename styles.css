@@ -1541,3 +1541,8 @@ html {
     background-color: transparent !important;
   }
 }
+
+/* + button under every question block */
+.insert-after-row { display:flex; justify-content:center; margin:-6px 0 10px; }
+.insert-after-btn { width:30px; height:30px; border-radius:50%; border:2px dashed #94a3b8; background:#fff; color:#64748b; font-size:20px; line-height:1; cursor:pointer; padding:0; transition:all .15s; }
+.insert-after-btn:hover { border-style:solid; border-color:#0badef; background:#0badef; color:#fff; transform:scale(1.12); }
