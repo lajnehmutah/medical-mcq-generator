@@ -1618,3 +1618,36 @@ body.is-resizing .editor-scroll-area { pointer-events: none; }
 /* Questions that belong to the page shown in the PDF window */
 .question-block.on-page:not(.selected-block) { box-shadow: -5px 0 0 var(--primary-cyan); }
 .logo-container { gap: 0; }
+
+/* ==========================================================================
+   Header title removed, unified question box, A-F answer row, page sync
+   ========================================================================== */
+.app-title, .app-subtitle { display: none !important; }
+
+.textarea-full {
+  width: 100%;
+  min-height: 180px;
+  line-height: 1.55;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.mcq-unified .choices-and-answer-grid { grid-template-columns: 1fr; }
+.mcq-unified .answer-side-box { width: 100%; }
+.mcq-unified .answer-letters { gap: 8px; }
+.mcq-unified .answer-letters .ans-choice-chip {
+  min-width: 40px;
+  padding: 8px 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.question-block.on-page { box-shadow: inset 5px 0 0 var(--primary-cyan); }
+.question-block.selected-block.on-page { box-shadow: 0 0 0 2px var(--primary-cyan), inset 5px 0 0 var(--primary-cyan); }
+
+/* Multi-line question text shows its line breaks in the PDF */
+.rendered-q-title > span:first-child { white-space: pre-line; }
+
+@media (pointer: coarse) {
+  .mcq-unified .answer-letters .ans-choice-chip { min-width: 46px; min-height: 44px; }
+}
