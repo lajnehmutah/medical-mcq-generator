@@ -1546,3 +1546,71 @@ html {
 .insert-after-row { display:flex; justify-content:center; margin:-6px 0 10px; }
 .insert-after-btn { width:30px; height:30px; border-radius:50%; border:2px dashed #94a3b8; background:#fff; color:#64748b; font-size:20px; line-height:1; cursor:pointer; padding:0; transition:all .15s; }
 .insert-after-btn:hover { border-style:solid; border-color:#0badef; background:#0badef; color:#fff; transform:scale(1.12); }
+
+/* ==========================================================================
+   Resizable windows, selected block, iPad / touch friendly layout
+   ========================================================================== */
+.editor-pane { resize: none; }
+
+.pane-resizer {
+  flex: 0 0 10px;
+  position: relative;
+  background: #e2e8f0;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: background .15s;
+}
+.pane-resizer:hover, body.is-resizing .pane-resizer { background: var(--primary-cyan); }
+.pane-resizer-grip {
+  width: 3px;
+  height: 36px;
+  border-radius: 2px;
+  background: #64748b;
+  pointer-events: none;
+}
+.pane-resizer:hover .pane-resizer-grip, body.is-resizing .pane-resizer-grip { background: #fff; }
+body.is-resizing { user-select: none; -webkit-user-select: none; cursor: col-resize; }
+body.is-resizing .preview-scroll-viewport,
+body.is-resizing .editor-scroll-area { pointer-events: none; }
+
+.question-block.selected-block {
+  border-color: var(--primary-cyan);
+  box-shadow: 0 0 0 2px var(--primary-cyan);
+}
+
+#btnFitWidth { margin-right: 8px; }
+
+@media (max-width: 900px) {
+  .pane-resizer { flex: 0 0 16px; cursor: row-resize; }
+  .pane-resizer-grip { width: 44px; height: 4px; }
+  body.is-resizing { cursor: row-resize; }
+}
+
+/* Touch screens (iPad): bigger tap targets, no iOS zoom-on-focus */
+@media (pointer: coarse) {
+  button, select, .btn, .icon-btn, .editor-tab, .mode-btn, .type-toggle, .btn-jump-page {
+    touch-action: manipulation;
+  }
+  .btn, .btn-sm, .mode-btn, .editor-tab, .type-toggle { min-height: 40px; }
+  .icon-btn { min-width: 40px; min-height: 40px; justify-content: center; font-size: 18px; }
+  .btn-jump-page { min-height: 32px; padding: 4px 10px !important; font-size: 13px !important; }
+  input[type="text"], input[type="number"], input:not([type]), textarea, select { font-size: 16px; }
+  .insert-after-btn { width: 40px; height: 40px; font-size: 24px; }
+  .pane-resizer { flex-basis: 18px; }
+  .editor-scroll-area, .preview-scroll-viewport { -webkit-overflow-scrolling: touch; }
+}
+
+@media (max-width: 1100px) {
+  .app-title { font-size: 14px; }
+  .header-actions { flex-wrap: wrap; gap: 6px; }
+}
+
+@media print {
+  .pane-resizer { display: none !important; }
+}
